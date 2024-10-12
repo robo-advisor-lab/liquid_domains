@@ -15,3 +15,5 @@ ssl
 sqlite3
 eth-account
 web3
+polars
+pyarrow

@@ -37,11 +37,13 @@ from models.forecasters import EnsemblePredictor, Prophet_Domain_Valuator, Domai
 
 pd.options.display.float_format = '{:,.2f}'.format
 
-def train_model(seed = 20, web3=True):
+def train_model(X, y, prophet_features, gen_features, target, combined_dataset, features, web3_data, X_web3, y_web3, seed = 20, web3=True):
     
     set_random_seed(seed)
 
-    X, y, prophet_features, gen_features, target, combined_dataset, features, web3_data, X_web3, y_web3 = process_data()
+    # X, y, prophet_features, gen_features, target, combined_dataset, features, web3_data, X_web3, y_web3 = process_data(api=api, seed = seed, web2_data=web2,tld_weight=tld_weight,temporals=temporals,corr_type=corr_type,
+                #  threshold=threshold)
+    print(f'prophet features: {prophet_features}')
     # Train models on entire dataset and save them
 
     print(f'Training on Combined Data...')
@@ -61,9 +63,21 @@ def train_model(seed = 20, web3=True):
 
 
     print(f'Saving Models...')
-    joblib.dump(prophet_model, 'prophet_model.pkl')
-    joblib.dump(ridge_model, 'ridge_model.pkl')
-    joblib.dump(randomforest_model, 'randomforest_model.pkl')
+    joblib.dump(prophet_model, '../pkl/prophet_model.pkl')
+    joblib.dump(ridge_model, '../pkl/ridge_model.pkl')
+    joblib.dump(randomforest_model, '../pkl/randomforest_model.pkl')
+
+    results = {
+        'prophet': prophet_metrics,
+        'ridge': ridge_metrics,
+        'randomforest': randomforest_metrics,
+        'web3prophet': web3prophet_metrics if web3 == True else None,
+        'web3ridge': web3ridge_metrics if web3 == True else None,
+        'web3randomforest': web3randomforest_metrics if web3 == True else None
+
+    }
+
+    return results
 
 
 

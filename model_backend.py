@@ -177,9 +177,9 @@ def create_app():
 
     X, y, prophet_features, gen_features, target, combined_dataset, features = process_data()
 
-    prophet_model = joblib.load('prophet_model.pkl')
-    ridge_model = joblib.load('ridge_model.pkl')
-    randomforest_model = joblib.load('randomforest_model.pkl')
+    prophet_model = joblib.load('/pkl/prophet_model.pkl')
+    ridge_model = joblib.load('/pkl/ridge_model.pkl')
+    randomforest_model = joblib.load('/pkl/randomforest_model.pkl')
 
     @app.route('/update_data')
     def update_data():

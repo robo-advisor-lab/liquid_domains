@@ -1,5 +1,37 @@
 from scripts.apis import *
-from sql_queries.sql import eth_price, Optimistic_Domains_Sales as Optimistic_Domains_Sales_query
+# from sql_queries.sql import eth_price, Optimistic_Domains_Sales as Optimistic_Domains_Sales_query
+
+Optimistic_Domains_Sales_query = """
+  SELECT
+  DATE_TRUNC('HOUR', BLOCK_TIMESTAMP) AS day,
+  tokenid,
+  price,
+  price_usd
+FROM
+  optimism.nft.ez_nft_sales
+WHERE
+  NFT_ADDRESS = LOWER('0xC16aCAdf99E4540E6f4E6Da816fd6D2A2C6E1d4F')
+  AND event_type = 'sale'
+order by
+  DATE_TRUNC('HOUR', BLOCK_TIMESTAMP) asc
+
+"""
+
+eth_price = """
+
+  select
+    hour as dt,
+    symbol,
+    price
+  from
+    ethereum.price.ez_prices_hourly
+  where
+    symbol in('WETH', 'MATIC')
+    AND date_trunc('day', dt) >= '	2022-06-01'
+  order by
+    dt DESC
+
+"""
 
 flipside_api_key = os.getenv('FLIPSIDE_API_KEY')
 alchemy_api_key = os.getenv('ALCHEMY_API_KEY')

@@ -172,7 +172,7 @@ class Domain_Valuator():
         print(f'domain: {self.domain} \npredicted value: {value[0]}')
         return value[0]
     
-def train_ridge_model(X, y, features, seed):
+def train_ridge_model(X, y, features=None, seed=20):
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -265,7 +265,11 @@ def train_prophet_model(features, combined_dataset, seed):
 
     train_df, test_df = train_test_split(df_prophet, test_size=0.2, shuffle=False, random_state=seed)
 
-    model = Prophet()
+    model = Prophet(
+        seasonality_mode='multiplicative',       # Best seasonality mode
+        changepoint_prior_scale=0.001,           # Best changepoint prior scale
+        seasonality_prior_scale=0.1              # Best seasonality prior scale
+    )
 
     for feature in features:
         model.add_regressor(feature)
