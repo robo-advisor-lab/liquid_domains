@@ -1,2 +1,0 @@
-,prophet,ridge,randomforest,web3prophet,web3ridge,web3randomforest,New API Data,Used web2 Data,Used threshold for correlation value,Used temporals,Fine tuned on web3 data,Domain,Ensamble Value
-0,"{'r2': -0.0006075502214817341, 'mae': np.float64(4512.380371846237), 'rmse': np.float64(159736.1477911904)}","{'r2': -2.3304543476543316e-05, 'mae': np.float64(43620.75806523563), 'mse': np.float64(6712088393071.915)}","{'r2': 0.005389120453218821, 'mae': np.float64(43838.15502736041), 'mse': np.float64(6675760564676.68)}",,,,False,False,,False,False,optimizer.box,15.340960525760767

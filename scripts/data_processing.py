@@ -363,31 +363,31 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
         def calculate_rolling_statistics(df, col='price_usd'):
             # Rolling averages
             df['7d_rolling_avg_price'] = df[col].rolling(window=7).mean().fillna(0)
-            df['30d_rolling_avg_price'] = df[col].rolling(window=30).mean().fillna(0)
+            # df['30d_rolling_avg_price'] = df[col].rolling(window=30).mean().fillna(0)
 
             # Rolling sum (sales volume)
             df['7d_sales_volume'] = df[col].rolling(window=7).sum().fillna(0)
-            df['30d_sales_volume'] = df[col].rolling(window=30).sum().fillna(0)
+            # df['30d_sales_volume'] = df[col].rolling(window=30).sum().fillna(0)
 
             # Expanding cumulative mean
-            df['cumulative_rolling_avg_price'] = df[col].expanding().mean()
+            # df['cumulative_rolling_avg_price'] = df[col].expanding().mean()
 
             # Rolling count (domains sold)
-            df['7d_domains_sold'] = df[col].rolling(window=7).count().fillna(0)
-            df['30d_domains_sold'] = df[col].rolling(window=30).count().fillna(0)
-            df['60d_domains_sold'] = df[col].rolling(window=60).count().fillna(0)
-            df['90d_domains_sold'] = df[col].rolling(window=90).count().fillna(0)
+            # df['7d_domains_sold'] = df[col].rolling(window=7).count().fillna(0)
+            # df['30d_domains_sold'] = df[col].rolling(window=30).count().fillna(0)
+            # df['60d_domains_sold'] = df[col].rolling(window=60).count().fillna(0)
+            # df['90d_domains_sold'] = df[col].rolling(window=90).count().fillna(0)
 
             # Rolling standard deviation
             df['7d_rolling_std_dev'] = df[col].rolling(window=7).std().fillna(0)
-            df['30d_rolling_std_dev'] = df[col].rolling(window=30).std().fillna(0)
+            # df['30d_rolling_std_dev'] = df[col].rolling(window=30).std().fillna(0)
 
             # Rolling median
-            df['7d_rolling_median_price'] = df[col].rolling(window=7).median().fillna(0)
-            df['30d_rolling_median_price'] = df[col].rolling(window=30).median().fillna(0)
+            # df['7d_rolling_median_price'] = df[col].rolling(window=7).median().fillna(0)
+            # df['30d_rolling_median_price'] = df[col].rolling(window=30).median().fillna(0)
 
-            # Expanding cumulative sum (sales volume)
-            df['cumulative_sum_sales_volume'] = df[col].expanding().sum().fillna(0)
+            # # Expanding cumulative sum (sales volume)
+            # df['cumulative_sum_sales_volume'] = df[col].expanding().sum().fillna(0)
             
             return df
         
@@ -418,6 +418,11 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
         columns_to_drop = ['90d_domains_sold', '60d_domains_sold', '30d_domains_sold', '7d_domains_sold', 'cumulative_sum_sales_volume',
                     'cumulative_rolling_avg_price','30d_rolling_median_price','7d_rolling_median_price',
                     '30d_rolling_std_dev']
+        
+        # Latest correlation values: most significant correlations among temporal vals
+        # 7d_sales_volume                 0.378099
+        # 7d_rolling_avg_price            0.378099
+        # 7d_rolling_std_dev              0.378011
 
         prophet_columns_to_drop = ['dt','90d_domains_sold', '60d_domains_sold', '30d_domains_sold', '7d_domains_sold', 'cumulative_sum_sales_volume',
                         'cumulative_rolling_avg_price','30d_rolling_median_price','7d_rolling_median_price',

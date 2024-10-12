@@ -16,3 +16,5 @@ chainlink-optimism-sepolia/
 liquid_domains-config.json
 node_modules
 *.mp4
+
+data/
