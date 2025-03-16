@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LST Optimizer</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f0f0f0;
+            color: #000;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+            border-bottom: 2px solid #333;
+        }
+        h1 {
+            margin-top: 0;
+            padding-bottom: 10px;
+        }
+        h2 {
+            padding-top: 20px;
+            padding-bottom: 10px;
+        }
+        div.graph-container {
+            background-color: #fff;
+            padding: 20px;
+            border: 2px solid #000;
+            margin-bottom: 20px;
+        }
+        div.graph-container + div.graph-container {
+            margin-top: 20px;
+        }
+        .results-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .results-column {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            background-color: #fff;
+            border: 2px solid #000;
+            margin: 10px;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        .result-item {
+            margin-bottom: 10px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            font-size: 1.5em;
+            color: #333;
+        }
+        .version-info {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1em;
+            color: #555;
+        }
+    </style>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function updatePage(data) {
+            hideLoading();
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '';
+
+            const sections = [
+                {title: 'Dates', items: [
+                    `Start Date: ${data.results['start date']}`,
+                    `Current Date: ${data.results['current date']}`
+                ]},
+                {title: 'Latest Portfolio Values', items: [
+                    `Optimizer: ${data.results['optimizer latest portfolio value']}`,
+                    `rETH: ${data.results['reth latest value']}`,
+                    `wstETH: ${data.results['wsteth latest value']}`,
+                    `sfrxETH: ${data.results['sfrxeth latest value']}`
+                ]},
+                {title: 'Cumulative Returns', items: [
+                    `Optimizer: ${data.results['optimizer cumulative return']}`,
+                    `rETH: ${data.results['rETH cumulative return']}`,
+                    `wstETH: ${data.results['wstETH cumulative return']}`,
+                    `sfrxETH: ${data.results['sfrxETH cumulative return']}`
+                ]},
+                {title: 'Excess Returns', items: [
+                    `Over rETH: ${data.results['optimizer Excess Return over rETH']}`,
+                    `Over wstETH: ${data.results['optimizer Excess Return over wstETH']}`,
+                    `Over sfrxETH: ${data.results['optimizer Excess Return over sfrxETH']}`
+                ]},
+                {title: 'CAGR', items: [
+                    `Optimizer: ${data.results['optimizer CAGR']}`,
+                    `rETH: ${data.results['rETH CAGR']}`,
+                    `wstETH: ${data.results['wstETH CAGR']}`,
+                    `sfrxETH: ${data.results['sfrxETH CAGR']}`
+                ]},
+                {title: 'Expected Returns', items: [
+                    `Optimizer: ${data.results['optimizer expected return']}`,
+                    `rETH: ${data.results['rETH expected return']}`,
+                    `wstETH: ${data.results['wstETH expected return']}`,
+                    `sfrxETH: ${data.results['sfrxETH expected return']}`
+                ]},
+                {title: 'Account Info', items: [
+                    `Address: ${data.results['address']}`,
+                    `wstETH Balance: ${data.results['wsteth balance']}`,
+                    `rETH Balance: ${data.results['reth balance']}`,
+                    `sfrxETH Balance: ${data.results['sfrxeth balance']}`,
+                    `Portfolio Balance USD: ${data.results['portfolio balance']}`,
+                    `Rebalancing Frequency: ${data.results['rebalance frequency']} hours`,
+                    `Network: ${data.results['network']}`,
+                    `wstETH Price: ${data.results['wsteth price']}`,
+                    `rETH Price: ${data.results['reth price']}`,
+                    `sfrxETH Price: ${data.results['sfrxeth price']}`
+                ]}
+            ];
+
+            sections.forEach(section => {
+                const column = document.createElement('div');
+                column.classList.add('results-column');
+                const title = document.createElement('h3');
+                title.textContent = section.title;
+                column.appendChild(title);
+
+                const list = document.createElement('ul');
+                section.items.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = item;
+                    list.appendChild(listItem);
+                });
+                column.appendChild(list);
+                resultsContainer.appendChild(column);
+            });
+            
+            Plotly.newPlot('graph_0', JSON.parse(data.graph_0).data, JSON.parse(data.graph_0).layout);
+            Plotly.newPlot('graph_1', JSON.parse(data.graph_1).data, JSON.parse(data.graph_1).layout);
+            Plotly.newPlot('graph_2', JSON.parse(data.graph_2).data, JSON.parse(data.graph_2).layout);
+            Plotly.newPlot('graph_3', JSON.parse(data.graph_3).data, JSON.parse(data.graph_3).layout);
+            Plotly.newPlot('graph_4', JSON.parse(data.graph_4).data, JSON.parse(data.graph_4).layout);
+
+            // Update the data version display
+            document.getElementById('data-version').textContent = data.results['data_version'];
+        }
+
+        function cacheData(data) {
+            localStorage.setItem('cachedData', JSON.stringify(data));
+            localStorage.setItem('lastFetchTime', new Date().toISOString());
+            localStorage.setItem('dataVersion', data.results['data_version']);
+        }
+
+        function getCachedData() {
+            const cachedData = localStorage.getItem('cachedData');
+            const lastFetchTime = localStorage.getItem('lastFetchTime');
+            const dataVersion = localStorage.getItem('dataVersion');
+            return { cachedData: JSON.parse(cachedData), lastFetchTime: new Date(lastFetchTime), dataVersion };
+        }
+
+        function fetchCachedData() {
+            fetch('/cached-data')
+                .then(response => response.json())
+                .then(data => {
+                    const { dataVersion } = getCachedData();
+                    if (dataVersion !== data.results['data_version']) {
+                        cacheData(data);
+                        updatePage(data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching cached data:', error);
+                    hideLoading();
+                });
+        }
+
+        window.onload = () => {
+            const { cachedData, lastFetchTime } = getCachedData();
+            const now = new Date();
+            const hoursDifference = Math.abs(now - lastFetchTime) / 36e5;
+
+            if (cachedData && hoursDifference < 1) {
+                updatePage(cachedData); // Use cached data if it's less than an hour old
+            } else {
+                fetchCachedData(); // Fetch cached data from the server if no valid cache
+            }
+            setInterval(fetchCachedData, 300000);
+        };
+    </script>    
+</head>
+<body>
+    <h1>Liquid Staking Token Index</h1>
+    <div class="loading" id="loading">Fetching latest data...</div>
+    <div class="graph-container" id="graph_1"></div>
+    <div class="graph-container" id="graph_2"></div>
+    <div class="graph-container" id="graph_3"></div>
+    <div class="graph-container" id="graph_4"></div>
+    <div class="graph-container" id="graph_0"></div>
+    <h2>Results</h2>
+    <div class="results-container" id="results-container"></div>
+    <div class="version-info">Data Version: <span id="data-version"></span></div>
+    <footer style="text-align: center; margin-top: 20px; padding: 10px; background-color: #333; color: #fff;">
+        <p>Contact: <a href="mailto:brandynham1120@gmail.com" style="color: #fff;">brandynham1120@gmail.com</a></p>
+        <p>Github: <a href="https://github.com/robo-advisor-lab/staked_eth_optimizer" style="color: #fff;">https://github.com/robo-advisor-lab/staked_eth_optimizer</a></p>
+        <p>Gitbook: <a href="https://robo-advisor-labs.gitbook.io/lst-index/" style="color: #fff;">https://robo-advisor-labs.gitbook.io/lst-index/</a></p>
+    </footer>
+</body>
+</html>

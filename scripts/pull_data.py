@@ -26,7 +26,7 @@ eth_price = """
   from
     ethereum.price.ez_prices_hourly
   where
-    symbol in('WETH', 'MATIC')
+    symbol in('WETH')
     AND date_trunc('day', dt) >= '	2022-06-01'
   order by
     dt DESC
@@ -65,10 +65,10 @@ def pull_data(api=False):
             Three_DNS_data = fetch_all_events(api_key=opensea_api_key,collection='3dns-powered-domains')
             Three_DNS_data.to_json(three_dns_path, orient='records')
             
-            optimistic_domains_sales = flipside_api_results(Optimistic_Domains_Sales_query,flipside_api_key)
+            optimistic_domains_sales = flipside_api_results(flipside_api_key, Optimistic_Domains_Sales_query)
             optimistic_domains_sales.to_csv(optimistic_domains_sales_path, index=False)
 
-            prices = flipside_api_results(eth_price, flipside_api_key)
+            prices = flipside_api_results(flipside_api_key, eth_price)
             prices.to_csv(prices_path,index=False)
 
             optimistic_domains = alchemy_metadata_api(alchemy_api_key, 'optimism', '0xC16aCAdf99E4540E6f4E6Da816fd6D2A2C6E1d4F')

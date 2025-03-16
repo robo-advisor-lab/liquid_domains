@@ -27,33 +27,36 @@ from scripts.pull_data import pull_data
 from models.forecasters import EnsemblePredictor, Prophet_Domain_Valuator, Domain_Valuator, train_ridge_model, train_randomforest_model, train_prophet_model
 # from sql_queries.sql_scripts import three_dns_sales
 
-# %%
+
 pd.options.display.float_format = '{:,.2f}'.format
 
 
-# %%
+
 current_directory = os.getcwd()
 current_directory
 
-# %%
+
 load_dotenv()
 
 def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,net=None,box=None,org=None,eth=None),temporals=True,corr_type='pearson',
                  threshold=None,correlation_analysis=False, last_dataset=False):
 
-    # %%
+    
     set_random_seed(seed)
 
     print(f'starting process_data')
 
+    target = 'price_usd'
+
     if last_dataset:
         print('using last dataset') 
-        combined_dataset = pd.read_csv('../data/last_dataset.csv')
+        combined_dataset = pd.read_csv('data/last_dataset.csv')
+        combined_dataset['dt'] = pd.to_datetime(combined_dataset['dt'])
         features = combined_dataset.drop(columns=target).columns
         print(f'target:{target},\n features:{features}')
 
-        if columns_to_drop is None:
-            columns_to_drop = []
+        columns_to_drop = []
+        prophet_columns_to_drop=columns_to_drop.copy() + ['dt']
 
         columns_to_drop = pd.Index(columns_to_drop)  # Ensure it's array-like
         prophet_columns_to_drop = pd.Index(prophet_columns_to_drop)
@@ -62,12 +65,11 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
         print(f'gen features {gen_features}')
         gen_features
 
-        # %%
+        
         prophet_features = features.difference(prophet_columns_to_drop)
         print(f'prophet features {prophet_features}')
         prophet_features
 
-        # %%
         X = combined_dataset[gen_features]
         y = combined_dataset[target]
 
@@ -82,7 +84,7 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
 
         return X, y, prophet_features, gen_features, target, combined_dataset, features, web3_data, X_web3, y_web3
 
-    # %%
+    
     flipside_api_key = os.getenv('FLIPSIDE_API_KEY')
     alchemy_api_key = os.getenv('ALCHEMY_API_KEY')
     opensea_api_key = os.getenv('OPENSEA_API_KEY')
@@ -112,7 +114,7 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
         domain_path = '../data/domain-name-sales.tsv'  
         domain_data = pd.read_csv(domain_path, delimiter='\t')
 
-        # %%
+        
         domain_data.set_index('date', inplace=True)
         domain_data = domain_data.drop(columns=['venue'])
         domain_data.sort_index(inplace=True)
@@ -124,7 +126,7 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
         domain_data['dt'] = domain_data['dt'].dt.tz_localize('UTC')
         domain_data['dt'] = pd.to_datetime(domain_data['dt'])
 
-        domain_data['web3'] = False
+        domain_data['web3'] = 0
 
         namebio_path = '../data/namebio_sales.csv'
         namebio_data = pd.read_csv(namebio_path)
@@ -138,7 +140,7 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
         namebio_data['dt'] = namebio_data['dt'].dt.tz_localize('UTC')
         namebio_data['dt'] = pd.to_datetime(namebio_data['dt'])
 
-        namebio_data['web3'] = False
+        namebio_data['web3'] = 0
 
         domain_data = pd.concat([domain_data,namebio_data],ignore_index=True)
 
@@ -148,7 +150,6 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
 
     Three_DNS_data = data_dict['Three_DNS_data']
     Three_DNS_data = Three_DNS_data[['dt','token_symbol','token_amt_clean','nft_identifier','nft_name']]
-    Three_DNS_data
   
     optimistic_domains = data_dict['optimistic_domains']
 
@@ -166,41 +167,66 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
     base_domains_metadata_pd
 
     prices_data = data_dict['prices_data']
+    print(f'prices_data: {prices_data}')
     prices_data = prices_data.dropna()
+
+    unique_dt = prices_data['dt'].unique()
+
+    usdc_rows = pd.DataFrame({
+    'dt': unique_dt,
+    'symbol': 'USDC',     # Add 'USDC' as the symbol
+    'price': 1.0          # Add 1 as the price
+    })
+    dai_rows = pd.DataFrame({
+    'dt': unique_dt,
+    'symbol': 'DAI',     # Add 'DAI' as the symbol
+    'price': 1.0          # Add 1 as the price
+    })
+
+    # Step 3: Concatenate the new rows with the existing DataFrame
+    prices_data = pd.concat([prices_data, usdc_rows], ignore_index=True)
+    prices_data = pd.concat([prices_data, dai_rows], ignore_index=True)
+
+#     # Step 4: Optional - Sort by 'dt' and reset the row index
+    prices_data = prices_data.sort_values(by='dt').reset_index(drop=True)
     prices_data['symbol'] = prices_data['symbol'].replace('WETH', 'ETH')
 
 
     prices_data = prices_data.pivot(index='dt',columns='symbol',values='price')
     prices_data = prices_data.reset_index()
+    prices_data['WETH'] = prices_data['ETH']
+    
     prices_data
 
     optimistic_domains_sales = data_dict['optimistic_domains_sales']
+    optimistic_domains_sales['token_symbol'] = 'ETH'
+
 
     print(f'optimistic_domains_sales: {optimistic_domains_sales}')
 
-    # %%
+    
     optimistic_domains_sales = optimistic_domains_sales.dropna(subset=['tokenid'])
     optimistic_domains_sales['tokenid']
 
-    # %%
+    
     optimistic_domains_sales['tokenid'] = optimistic_domains_sales['tokenid'].astype(int)
     optimistic_domains_sales.rename(columns={"tokenid":"tokenId"}, inplace=True)
 
-    # %%
+    
     optimistic_domains_sales['tokenId']
 
-    # %%
+    
     optimistic_domains['tokenId']
 
 
-    # %%
+    
     optimistic_data = pd.merge(optimistic_domains_sales, optimistic_domains, on='tokenId', how='left')
     optimistic_data.rename(columns={"tokenId":"nft_identifier","name":"nft_name", "day":"dt"}, inplace=True)
 
-    # %%
+    
     prices_data
 
-    # %%
+    
     optimism_name_service_data['dt'] = pd.to_datetime(optimism_name_service_data['dt'], unit='ms')
     Three_DNS_data['dt'] = pd.to_datetime(Three_DNS_data['dt'], unit='ms')
     ens_data['dt'] = pd.to_datetime(ens_data['dt'])
@@ -213,7 +239,7 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
         return df
 
 
-    # %%
+    
     Three_DNS_data = hourly(Three_DNS_data)
     optimism_name_service_data = hourly(optimism_name_service_data)
     ens_data = hourly(ens_data)
@@ -225,66 +251,38 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
 
     Three_DNS_data
 
-    # %%
+    
     Three_DNS_data['dt']
 
-    # %%
+    
     prices_data['dt'] = pd.to_datetime(prices_data['dt'])
     # prices_data.rename(columns={'DT':'dt'}, inplace=True)
 
 
-    # %%
+
     print(f'prices data dt: {prices_data["dt"]}')
-    # prices_data['dt'] = prices_data['dt'].dt.tz_convert('UTC')
-    prices_data
 
-    # %%
-    Three_DNS_data = Three_DNS_data.merge(prices_data, how='left', on='dt')
-    Three_DNS_data['price_usd'] = Three_DNS_data['token_amt_clean'] * Three_DNS_data['ETH']
-    Three_DNS_data
-
-    # %%
-    optimism_name_service_data = optimism_name_service_data.merge(prices_data, how='left', on='dt')
-    optimism_name_service_data['price_usd'] = optimism_name_service_data['token_amt_clean'] * optimism_name_service_data['ETH']
-    optimism_name_service_data
-
-
-    # %%
-    ens_data = ens_data.merge(prices_data, how='left', on='dt')
-    ens_data['price_usd'] = ens_data['token_amt_clean'] * ens_data['ETH']
-
-    unstoppable_sales_data = unstoppable_sales_data.merge(prices_data, how='left', on='dt')
-    unstoppable_sales_data['price_usd'] = unstoppable_sales_data['token_amt_clean'] * unstoppable_sales_data['ETH']
-
-    # %%
-    base_domains_metadata_pd = base_domains_metadata_pd.merge(prices_data, how='left', on='dt')
-    base_domains_metadata_pd['price_usd'] = base_domains_metadata_pd['token_amt_clean'] * base_domains_metadata_pd['ETH']
-    base_domains_metadata_pd
+   
 
     print(f'optimistic_data:{optimistic_data}')
 
-    # %%
-    # optimistic_data = optimistic_data.merge(prices_data, how='left', on='dt')
-    # optimistic_data['price_usd'] = optimistic_data['price'] * ens_data['ETH']
+
     optimistic_data.rename(columns={'price':'token_amt_clean'}, inplace=True)
 
-    # %%
     optimistic_data['dt'] = pd.to_datetime(optimistic_data['dt'])
-    # optimistic_data['dt'] = optimistic_data['dt'].dt.tz_localize('UTC')
-    # optimistic_data['dt'] = pd.to_datetime(optimistic_data['dt'])
 
     print(f'optimistic_data:{optimistic_data}')
 
     
 
-    # %%
+    
     combined_dataset = pd.concat([
-        ens_data[['dt','nft_name','price_usd','token_amt_clean']].dropna(),
-        optimistic_data[['dt','nft_name','price_usd','token_amt_clean']].dropna(),
-        optimism_name_service_data[['dt','nft_name','price_usd','token_amt_clean']].dropna(),
-        unstoppable_sales_data[['dt','nft_name','price_usd','token_amt_clean']].dropna(),
-        base_domains_metadata_pd[['dt','nft_name','price_usd','token_amt_clean']].dropna(),
-        Three_DNS_data[['dt','nft_name','price_usd','token_amt_clean']].dropna()
+    ens_data[['dt','nft_name','token_amt_clean','token_symbol']].dropna(),
+    optimistic_data[['dt','nft_name','token_amt_clean','token_symbol']].dropna(),
+    optimism_name_service_data[['dt','nft_name','token_amt_clean','token_symbol']].dropna(),
+    unstoppable_sales_data[['dt','nft_name','token_amt_clean','token_symbol']].dropna(),
+    base_domains_metadata_pd[['dt','nft_name','token_amt_clean','token_symbol']].dropna(),
+    Three_DNS_data[['dt','nft_name','token_amt_clean','token_symbol']].dropna()
     ], ignore_index=True)
 
     print(f'combined dataset')
@@ -293,15 +291,24 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
     combined_dataset['dt'] = pd.to_datetime(combined_dataset['dt'], errors='coerce')
     combined_dataset = combined_dataset.sort_values(by='dt')
     combined_dataset = combined_dataset.reset_index(drop=True)
-    combined_dataset
-
-
-    # %%
+    combined_dataset = combined_dataset.merge(prices_data, how='left', on='dt')
+    print(f'combined_dataset:{combined_dataset}')
+    print(f'prices_data:{prices_data}')
+    token_price_map = {
+        'ETH': combined_dataset['ETH'],
+        'WETH': combined_dataset['WETH'],
+        'DAI': combined_dataset['DAI'],
+        'USDC': combined_dataset['USDC']
+    }
+    combined_dataset['price_usd'] = combined_dataset.apply(
+        lambda row: row['token_amt_clean'] * token_price_map[row['token_symbol']].loc[row.name], axis=1
+    )
 
     target = 'price_usd'
     combined_dataset = combined_dataset.rename(columns={'nft_name':'domain'})
-    combined_dataset = combined_dataset.drop(columns=['token_amt_clean'])
-    combined_dataset['web3'] = True
+    combined_dataset = combined_dataset.drop(columns=['token_amt_clean','ETH','WETH','DAI','USDC','token_symbol'])
+    combined_dataset['web3'] = 1
+
 
     # web3_data = combined_dataset.copy()
 
@@ -322,10 +329,13 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
     combined_dataset['tld_length'] = combined_dataset['tld'].apply(len)
     print(f'is_brandable')
     combined_dataset['is_brandable'] = combined_dataset['domain'].apply(is_brandable)
+    print(f'levenshtein_distance')
     combined_dataset['levenshtein_distance'] = combined_dataset['domain'].apply(min_levenshtein_distance)
+    print(f'is_subdomain')
     combined_dataset['is_subdomain'] = combined_dataset['domain'].apply(is_subdomain)
     print(f'domain_entropy')
     combined_dataset['domain_entropy'] = combined_dataset['domain'].apply(entropy)
+    print(f'add_domain_rank')
     combined_dataset = add_domain_rank(combined_dataset, domain_rankings)
 
     # print(f'web3 domain feature engineering')
@@ -448,12 +458,11 @@ def process_data(seed=20,api=False, web2_data = False,tld_weight=dict(com=None,n
     print(f'gen features {gen_features}')
     gen_features
 
-    # %%
     prophet_features = features.difference(prophet_columns_to_drop)
     print(f'prophet features {prophet_features}')
     prophet_features
 
-    # %%
+    
     X = combined_dataset[gen_features]
     y = combined_dataset[target]
 

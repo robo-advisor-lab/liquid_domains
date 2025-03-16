@@ -116,7 +116,26 @@
             <li><a href="/endpoints">Deployed Contracts & Endpoints</a></li>
         </ul>
         <h1>🌐 Liquid Domains</h1>
-        <input type="text" id="domain" placeholder="Enter domain name">
+        <input type="text" id="domain" placeholder="Enter domain prefix (no '.')">
+
+        <!-- TLD Dropdown -->
+        <select id="tld">
+            <option value=".op">.op</option>
+            <option value=".crypto">.crypto</option>
+            <option value=".box">.box</option>
+            <option value=".eth">.eth</option>
+            <option value=".base">.base</option>
+            <option value=".nft">.nft</option>
+            <option value=".wallet">.wallet</option>
+            <option value=".coin">.coin</option>
+            <option value=".finance">.finance</option>
+            <option value=".xyz">.xyz</option>
+            <option value=".dao">.dao</option>
+            <option value=".bitcoin">.bitcoin</option>
+            <option value=".blockchain">.blockchain</option>
+        </select>
+
+        <!-- Evaluate Button -->
         <button onclick="evaluateDomain()">Evaluate</button>
         <div class="result" id="result"></div>
         
@@ -165,15 +184,29 @@
             return `$${numberValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
         function evaluateDomain() {
-            const domain = document.getElementById('domain').value;
-            const apiKey = 'superhack2024';  // Your API key
-    
+            const domain = document.getElementById('domain').value.trim(); // Get domain prefix
+            const tld = document.getElementById('tld').value;             // Get selected TLD
+
+            // Validate domain prefix input
+            if (!domain) {
+                document.getElementById('result').textContent = "Please enter a domain prefix.";
+                return;
+            }
+
+            if (domain.includes('.')) {
+                document.getElementById('result').textContent = "Invalid input. Domain prefix should not contain a '.' character.";
+                return;
+            }
+
+            const fullDomain = `${domain}${tld}`;  // Combine domain prefix and TLD
+            const apiKey = 'superhack2024';
+
             fetch('/api/evaluate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ domain: domain, api_key: apiKey })  // Include API key in the body
+                body: JSON.stringify({ domain: fullDomain, api_key: apiKey })
             })
             .then(response => response.json())
             .then(data => {
@@ -181,14 +214,14 @@
                 if (data.error) {
                     resultDiv.textContent = data.error;
                 } else {
-                    resultDiv.textContent = `Domain: ${data.domain} - Value: ${formatCurrency(data.value)}`;
+                    resultDiv.textContent = `Domain: ${data.domain} - Value: $${parseFloat(data.value).toFixed(2)}`;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                document.getElementById('result').textContent = "An error occurred while processing your request.";
             });
         }
-        
         function fetchVisualizations() {
             const timeFrame = document.getElementById('time_frame').value;
 

@@ -73,7 +73,11 @@ brandable_words = ['google', 'apple', 'amazon', 'zoom', 'meta', 'coin', 'chain',
 # Function to check if the domain contains any brandable word
 def is_brandable(domain):
     domain_name = domain.lower().split('.')[0]  # Get the domain part without TLD
+    if domain_name == 'google':
+        print(f'domain name: {domain_name}')
     for word in brandable_words:
+        if domain_name == 'google' and word =='google':
+            print(f'word: {word}')
         if word in domain_name:
             return 1  # Brandable
     return 0  # Not brandable

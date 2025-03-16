@@ -22,9 +22,19 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split, GridSearchCV
-from scripts.utils import flipside_api_results, set_random_seed
+from scripts.utils import flipside_api_results, set_random_seed, is_brandable, min_levenshtein_distance, is_subdomain,entropy,add_domain_rank
 
-class EnsemblePredictor:
+domain_rankings = pd.read_csv('E:/Projects/liquid_domains/data/tranco_5863N.csv')
+google_rank = pd.DataFrame({'rank': [1], 'domain': ['google.com']})
+domain_rankings.columns = ['rank','domain']
+
+# Concatenate the new row with the original domain rankings
+domain_rankings = pd.concat([google_rank, domain_rankings], ignore_index=True)
+
+# Reset the index and display the updated rankings
+domain_rankings.reset_index(drop=True, inplace=True)
+
+class EnsemblePredictor():
     def __init__(self, prophet_model, rf_model, ridge_model, features):
         self.prophet_model = prophet_model
         self.rf_model = rf_model
@@ -65,12 +75,27 @@ class Prophet_Domain_Valuator():
         self.data = None
     
     def model_prep(self):
+    
         # Prepare the domain DataFrame
+        print(f'at model prep: {self.domain}')
         domain_df = pd.DataFrame({'domain': [self.domain]})
         domain_df['domain_length'] = domain_df['domain'].apply(len)
         domain_df['num_vowels'] = domain_df['domain'].apply(lambda x: sum([1 for char in x if char in 'aeiou']))
         domain_df['num_consonants'] = domain_df['domain'].apply(lambda x: sum([1 for char in x if char.isalpha() and char not in 'aeiou']))
         domain_df['tld'] = domain_df['domain'].apply(lambda x: x.split('.')[-1])
+        domain_df['word_count'] = domain_df['domain'].apply(lambda x: len(x.split('-')))
+        domain_df['has_numbers'] = domain_df['domain'].apply(lambda x: any(char.isdigit() for char in x))
+        domain_df['tld_length'] = domain_df['tld'].apply(len)
+        print(f'is_brandable')
+        domain_df['is_brandable'] = domain_df['domain'].apply(is_brandable)
+        print(f'levenshtein_distance')
+        domain_df['levenshtein_distance'] = domain_df['domain'].apply(min_levenshtein_distance)
+        print(f'is_subdomain')
+        domain_df['is_subdomain'] = domain_df['domain'].apply(is_subdomain)
+        print(f'domain_entropy')
+        domain_df['domain_entropy'] = domain_df['domain'].apply(entropy)
+        print(f'add_domain_rank')
+        domain_df = add_domain_rank(domain_df, domain_rankings)
 
         # Include today’s date
         today = pd.Timestamp.now().normalize()
@@ -132,7 +157,19 @@ class Domain_Valuator():
         domain_df['num_vowels'] = domain_df['domain'].apply(lambda x: sum([1 for char in x if char in 'aeiou']))
         domain_df['num_consonants'] = domain_df['domain'].apply(lambda x: sum([1 for char in x if char.isalpha() and char not in 'aeiou']))
         domain_df['tld'] = domain_df['domain'].apply(lambda x: x.split('.')[-1])
-        # domain_df['tld_weight'] = domain_df['tld'].map(self.tld_weights).fillna(self.default_tld_weight)
+        domain_df['word_count'] = domain_df['domain'].apply(lambda x: len(x.split('-')))
+        domain_df['has_numbers'] = domain_df['domain'].apply(lambda x: any(char.isdigit() for char in x))
+        domain_df['tld_length'] = domain_df['tld'].apply(len)
+        print(f'is_brandable')
+        domain_df['is_brandable'] = domain_df['domain'].apply(is_brandable)
+        print(f'levenshtein_distance')
+        domain_df['levenshtein_distance'] = domain_df['domain'].apply(min_levenshtein_distance)
+        print(f'is_subdomain')
+        domain_df['is_subdomain'] = domain_df['domain'].apply(is_subdomain)
+        print(f'domain_entropy')
+        domain_df['domain_entropy'] = domain_df['domain'].apply(entropy)
+        print(f'add_domain_rank')
+        domain_df = add_domain_rank(domain_df, domain_rankings)
 
         # Include today’s date
         today = pd.Timestamp.now().normalize()
